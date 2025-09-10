@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from './ui/card';
 import { Button } from './ui/button';
 import { Badge } from './ui/badge';
@@ -65,8 +65,28 @@ export function CommunityScreen({ onAddProduct, onNavigate }: CommunityScreenPro
   const [filterBy, setFilterBy] = useState('latest');
   const [newPost, setNewPost] = useState('');
   
-  const artisanName = "Sarah Martinez";
-  const artisanInitials = "SM";
+  const [artisanName, setArtisanName] = useState<string>("");
+const [artisanInitials, setArtisanInitials] = useState<string>("");
+
+// fetch artisan data from backend using email in localStorage
+useEffect(() => {
+  const storedUser = localStorage.getItem("user");
+  if (storedUser) {
+    const user = JSON.parse(storedUser);
+
+    if (user.full_name) {
+      setArtisanName(user.full_name);
+
+      const initials = user.full_name
+        .split(" ")
+        .map((n: string) => n[0])
+        .join("")
+        .toUpperCase();
+      setArtisanInitials(initials);
+    }
+  }
+}, []);
+
 
   const posts: Post[] = [
     {

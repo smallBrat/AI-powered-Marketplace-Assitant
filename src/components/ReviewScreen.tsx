@@ -15,43 +15,77 @@ import {
 
 interface ReviewScreenProps {
   onNext: () => void;
+  product: any;
 }
 
-export function ReviewScreen({ onNext }: ReviewScreenProps) {
+export function ReviewScreen({ onNext, product }: ReviewScreenProps) {
   const [isEditing, setIsEditing] = useState(false);
-  const [productTitle, setProductTitle] = useState("Handcrafted Ceramic Coffee Mug - Ocean Blue Glaze");
-  const [productDescription, setProductDescription] = useState(`This beautiful ceramic mug is handcrafted with love and attention to detail. The stunning ocean blue glaze creates a unique, one-of-a-kind piece that brings tranquility to your morning coffee ritual.
+  const [expanded, setExpanded] = useState(false);
+  const [productTitle, setProductTitle] = useState(product?.title || "");
+  const [productDescription, setProductDescription] = useState(product?.description || "");
+  const [brandStory, setBrandStory] = useState(product?.backstory || product?.story || "");
+  const [loading, setLoading] = useState(false);
+  const enhancedImage = product?.image || "";
 
-✨ Features:
-• Premium stoneware construction for durability
-• Microwave and dishwasher safe
-• Comfortable ergonomic handle
-• 12oz capacity - perfect for coffee or tea
-• Food-safe, lead-free glaze
+  const handleSave = async () => {
+  setIsEditing(false);
+  // Example: persist changes to backend
+  await fetch("/api/saveProduct", {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({ productTitle, productDescription, brandStory }),
+  });
+};
 
-Each mug is individually hand-thrown on the potter's wheel, making every piece slightly unique. The ocean blue glaze reminds you of peaceful waves and clear skies with every sip.`);
-
-  const [brandStory, setBrandStory] = useState(`In a small studio overlooking the coast, this mug was born from a moment of inspiration. The artisan, watching the morning waves crash against the shore, was captivated by the way the ocean's blue merged with the sky.
-
-This ceramic piece carries that very essence - the calming blue of endless horizons and the warmth of a craftsperson's hands. Each curve was shaped with intention, each glaze stroke applied with care.
-
-When you hold this mug, you're not just holding a vessel for your favorite beverage. You're holding a piece of coastal serenity, a moment of peace crafted just for you.`);
-
-  const enhancedImage = "https://images.unsplash.com/photo-1578662996442-48f60103fc96?w=400&h=400&fit=crop";
-
-  const handleSave = () => {
-    setIsEditing(false);
-    // In a real app, this would save the changes
+  const handleRegenerate = async () => {
+    // Regenerate all content using backend (Vertex/Gemini)
+    setLoading(true);
+    try {
+      // Call a backend endpoint to regenerate using the productId
+      // We'll assume product.id is available (from Firestore)
+      const res = await fetch(`http://localhost:8000/api/v1/products/${product.id}/regenerate`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({})
+      });
+      if (!res.ok) throw new Error('Failed to regenerate product');
+      const data = await res.json();
+      setProductTitle(data.title || "");
+      setProductDescription(data.description || "");
+      setBrandStory(data.backstory || data.story || "");
+    } catch (err) {
+      alert('Failed to regenerate product: ' + (err as any)?.message);
+    } finally {
+      setLoading(false);
+    }
   };
 
-  const handleRegenerate = () => {
-    // In a real app, this would trigger AI regeneration
-    alert("Regenerating content... This would trigger a new AI process in a real app.");
+  const handleAccept = async () => {
+    setLoading(true);
+    try {
+      const res = await fetch(`http://localhost:8000/api/v1/products/${product.id}/update`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          title: productTitle,
+          description: productDescription,
+          backstory: brandStory,
+          story: brandStory, // keep both for compatibility
+          image: enhancedImage
+        })
+      });
+      if (!res.ok) throw new Error("Failed to update product");
+      const data = await res.json();
+      console.log("Product updated:", data);
+      onNext(); // move to next screen
+    } catch (error) {
+      alert("Failed to update product: " + (error as any)?.message);
+      console.error("Error updating product:", error);
+    } finally {
+      setLoading(false);
+    }
   };
 
-  const handleAccept = () => {
-    onNext();
-  };
 
   return (
     <div className="min-h-screen p-6" style={{ backgroundColor: 'var(--color-pastel-blue)' }}>
@@ -79,17 +113,19 @@ When you hold this mug, you're not just holding a vessel for your favorite bever
             variant="outline"
             onClick={handleRegenerate}
             className="flex items-center gap-2"
+            disabled={loading}
           >
-            <RotateCcw className="w-4 h-4" />
-            Regenerate All
+            <RotateCcw className={`w-4 h-4${loading ? ' animate-spin' : ''}`} />
+            {loading ? 'Regenerating...' : 'Regenerate All'}
           </Button>
           
           <Button
             onClick={handleAccept}
             className="flex items-center gap-2 bg-green-600 hover:bg-green-700"
+            disabled={loading}
           >
             <Check className="w-4 h-4" />
-            Accept & Continue
+            {loading ? "Saving..." : "Accept & Continue"}
           </Button>
         </div>
 
@@ -156,10 +192,13 @@ When you hold this mug, you're not just holding a vessel for your favorite bever
                     className="resize-none"
                   />
                 ) : (
-                  <div className="p-3 rounded-lg bg-muted max-h-64 overflow-y-auto">
-                    <div className="whitespace-pre-line text-sm leading-relaxed">
+                  <div className="p-3 rounded-lg bg-muted">
+                    <div className="whitespace-pre-line text-sm leading-relaxed line-clamp-6">
                       {productDescription}
                     </div>
+                    <Button variant="link" size="sm" onClick={() => setExpanded(!expanded)}>
+                      {expanded ? "Show Less" : "Read More"}
+                    </Button>
                   </div>
                 )}
               </div>

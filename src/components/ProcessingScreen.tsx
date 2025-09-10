@@ -1,4 +1,4 @@
-import { useEffect, useState } from 'react';
+import React, { useEffect, useState } from 'react';
 import { Card, CardContent } from './ui/card';
 import { Progress } from './ui/progress';
 import { 
@@ -11,7 +11,8 @@ import {
 } from 'lucide-react';
 
 interface ProcessingScreenProps {
-  onComplete: () => void;
+  productId: string;
+  onComplete: (productId: string) => void;
 }
 
 interface ProcessingStep {
@@ -23,7 +24,7 @@ interface ProcessingStep {
   progress: number;
 }
 
-export function ProcessingScreen({ onComplete }: ProcessingScreenProps) {
+export function ProcessingScreen({ productId, onComplete }: ProcessingScreenProps) {
   const [currentStep, setCurrentStep] = useState(0);
   const [overallProgress, setOverallProgress] = useState(0);
 
@@ -65,46 +66,46 @@ export function ProcessingScreen({ onComplete }: ProcessingScreenProps) {
   const [processSteps, setProcessSteps] = useState(steps);
 
   useEffect(() => {
+    console.log("🚀 Processing started for product:", productId);
     const timer = setInterval(() => {
-      setProcessSteps(prev => {
-        const updated = [...prev];
+    setProcessSteps(prev => {
+      const updated = [...prev];
+      
+      if (currentStep < updated.length) {
+        const current = updated[currentStep];
         
-        if (currentStep < updated.length) {
-          const current = updated[currentStep];
+        if (current.status === 'pending') {
+          current.status = 'processing';
+        } else if (current.status === 'processing') {
+          current.progress += 20;
           
-          if (current.status === 'pending') {
-            current.status = 'processing';
-          } else if (current.status === 'processing') {
-            current.progress += 20;
+          if (current.progress >= 100) {
+            current.status = 'completed';
+            current.progress = 100;
             
-            if (current.progress >= 100) {
-              current.status = 'completed';
-              current.progress = 100;
-              
-              if (currentStep < updated.length - 1) {
-                setCurrentStep(currentStep + 1);
-              } else {
-                // All steps completed
-                setOverallProgress(100);
-                setTimeout(() => onComplete(), 1000);
-              }
+            if (currentStep < updated.length - 1) {
+              setCurrentStep(currentStep + 1);
+            } else {
+              // All steps completed
+              setOverallProgress(100);
+              setTimeout(() => onComplete(productId), 1000);
             }
           }
         }
-        
-        return updated;
-      });
+      }
 
-      // Update overall progress
-      const completedSteps = processSteps.filter(step => step.status === 'completed').length;
-      const processingStep = processSteps.find(step => step.status === 'processing');
+      // Update overall progress using updated state
+      const completedSteps = updated.filter(step => step.status === 'completed').length;
+      const processingStep = updated.find(step => step.status === 'processing');
       const processingProgress = processingStep ? processingStep.progress / 100 : 0;
-      
-      setOverallProgress(((completedSteps + processingProgress) / processSteps.length) * 100);
-    }, 300);
+      setOverallProgress(((completedSteps + processingProgress) / updated.length) * 100);
+
+      return updated;
+    });
+  }, 300);
 
     return () => clearInterval(timer);
-  }, [currentStep, processSteps, onComplete]);
+  }, [currentStep, processSteps, onComplete, productId]);
 
   return (
     <div className="min-h-screen p-6" style={{ backgroundColor: 'var(--color-pastel-mint)' }}>

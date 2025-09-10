@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import React, { useState } from 'react';
 import { SignUpScreen } from './components/01_SignUpScreen';
 import { SignInScreen } from './components/02_SignInScreen';
 import { DashboardScreen } from './components/03_DashboardScreen';
@@ -36,6 +36,11 @@ interface Step {
 
 export default function App() {
   const [currentScreen, setCurrentScreen] = useState<Screen>('signup');
+  const [productId, setProductId] = useState<string | null>(null);
+  const [productData, setProductData] = useState<any>(null); // Store product data for review
+
+  // Debug: Log current screen on every render
+  console.log('[App] Current screen:', currentScreen);
 
   const steps: Step[] = [
     {
@@ -74,6 +79,30 @@ export default function App() {
     return steps.findIndex(step => step.id === currentScreen);
   };
 
+
+  // Product workflow handlers
+  const handleInputNext = (id: string) => {
+    setProductId(id);
+    setCurrentScreen('processing');
+  };
+
+  const handleProcessingComplete = (id: string) => {
+    setProductId(id);
+    setCurrentScreen('output');
+  };
+
+  const handleOutputNext = (product: any) => {
+    // Save product data for review
+    setProductData(product);
+    console.log('[App] handleOutputNext called, navigating to review');
+    setCurrentScreen('review');
+  };
+
+  const handleReviewNext = () => {
+    setCurrentScreen('export');
+  };
+
+  // For non-product workflow
   const handleNext = () => {
     const currentIndex = getCurrentStepIndex();
     if (currentIndex < steps.length - 1) {
@@ -158,13 +187,13 @@ export default function App() {
           />
         );
       case 'input':
-        return <InputScreen onNext={handleNext} />;
+        return <InputScreen onNext={handleInputNext} />;
       case 'processing':
-        return <ProcessingScreen onComplete={handleNext} />;
+        return productId ? <ProcessingScreen productId={productId} onComplete={handleProcessingComplete} /> : null;
       case 'output':
-        return <OutputScreen onNext={handleNext} />;
+        return productId ? <OutputScreen productId={productId} onNext={(product) => handleOutputNext(product)} /> : null;
       case 'review':
-        return <ReviewScreen onNext={handleNext} />;
+        return productData ? <ReviewScreen onNext={handleReviewNext} product={productData} /> : null;
       case 'export':
         return <ExportScreen onComplete={handleComplete} />;
       default:

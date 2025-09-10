@@ -10,37 +10,28 @@ import {
   Sparkles,
   Download 
 } from 'lucide-react';
+import { useEffect, useState } from "react";
 
 interface OutputScreenProps {
-  onNext: () => void;
+  onNext: (product: any) => void;
+  productId: string;
 }
 
-export function OutputScreen({ onNext }: OutputScreenProps) {
-  // Mock AI-generated content
-  const enhancedImage = "https://images.unsplash.com/photo-1578662996442-48f60103fc96?w=400&h=400&fit=crop";
-  
-  const productDescription = `Handcrafted Ceramic Coffee Mug - Ocean Blue Glaze
+export function OutputScreen({ onNext, productId }: OutputScreenProps) {
+  const [product, setProduct] = useState<any>(null);
 
-This beautiful ceramic mug is handcrafted with love and attention to detail. The stunning ocean blue glaze creates a unique, one-of-a-kind piece that brings tranquility to your morning coffee ritual. 
-
-✨ Features:
-• Premium stoneware construction for durability
-• Microwave and dishwasher safe
-• Comfortable ergonomic handle
-• 12oz capacity - perfect for coffee or tea
-• Food-safe, lead-free glaze
-
-Each mug is individually hand-thrown on the potter's wheel, making every piece slightly unique. The ocean blue glaze reminds you of peaceful waves and clear skies with every sip.`;
-
-  const brandStory = `The Story Behind Your Creation
-
-In a small studio overlooking the coast, this mug was born from a moment of inspiration. The artisan, watching the morning waves crash against the shore, was captivated by the way the ocean's blue merged with the sky. 
-
-This ceramic piece carries that very essence - the calming blue of endless horizons and the warmth of a craftsperson's hands. Each curve was shaped with intention, each glaze stroke applied with care.
-
-When you hold this mug, you're not just holding a vessel for your favorite beverage. You're holding a piece of coastal serenity, a moment of peace crafted just for you. It's the perfect companion for quiet mornings, creative afternoons, or cozy evenings by the fire.
-
-This isn't just a mug - it's a daily reminder to pause, breathe, and appreciate the simple beauty in life.`;
+  useEffect(() => {
+    const fetchProduct = async () => {
+      try {
+        const res = await fetch(`http://localhost:8000/api/v1/products/${productId}`);
+        const data = await res.json();
+        setProduct(data);
+      } catch (err) {
+        console.error("Failed to fetch product", err);
+      }
+    };
+    fetchProduct();
+  }, [productId]);
 
   return (
     <div className="min-h-screen p-6" style={{ backgroundColor: 'var(--color-pastel-peach)' }}>
@@ -62,80 +53,84 @@ This isn't just a mug - it's a daily reminder to pause, breathe, and appreciate 
 
         {/* Results Grid */}
         <div className="grid gap-6 lg:grid-cols-2">
-          {/* Enhanced Image */}
-          <Card className="lg:row-span-2">
-            <CardHeader>
-              <CardTitle className="flex items-center gap-2">
-                <ImageIcon className="w-5 h-5 text-primary" />
-                Enhanced Product Image
-              </CardTitle>
-            </CardHeader>
-            <CardContent className="space-y-4">
-              <div className="relative">
-                <img
-                  src={enhancedImage}
-                  alt="Enhanced product"
-                  className="w-full h-64 lg:h-96 object-cover rounded-lg shadow-md"
-                />
-                <div className="absolute top-2 right-2">
-                  <Button size="sm" variant="outline" className="bg-white/90">
-                    <Download className="w-4 h-4" />
-                  </Button>
-                </div>
-              </div>
-              <div 
-                className="p-3 rounded-lg text-sm"
-                style={{ backgroundColor: 'var(--color-pastel-yellow)' }}
-              >
-                <p>
-                  <strong>AI Enhancements:</strong> Improved lighting, color saturation, 
-                  and background optimization for marketplace appeal.
-                </p>
-              </div>
-            </CardContent>
-          </Card>
+          {product && (
+            <>
+              {/* Enhanced Image */}
+              <Card className="lg:row-span-2">
+                <CardHeader>
+                  <CardTitle className="flex items-center gap-2">
+                    <ImageIcon className="w-5 h-5 text-primary" />
+                    Enhanced Product Image
+                  </CardTitle>
+                </CardHeader>
+                <CardContent className="space-y-4">
+                  <div className="relative">
+                    <img
+                      src={product.image}
+                      alt="Enhanced product"
+                      className="w-full h-64 lg:h-96 object-cover rounded-lg shadow-md"
+                    />
+                    <div className="absolute top-2 right-2">
+                      <Button size="sm" variant="outline" className="bg-white/90">
+                        <Download className="w-4 h-4" />
+                      </Button>
+                    </div>
+                  </div>
+                  <div 
+                    className="p-3 rounded-lg text-sm"
+                    style={{ backgroundColor: 'var(--color-pastel-yellow)' }}
+                  >
+                    <p>
+                      <strong>AI Enhancements:</strong> Improved lighting, color saturation, 
+                      and background optimization for marketplace appeal.
+                    </p>
+                  </div>
+                </CardContent>
+              </Card>
 
-          {/* Product Description */}
-          <Card>
-            <CardHeader>
-              <CardTitle className="flex items-center gap-2">
-                <FileText className="w-5 h-5 text-primary" />
-                Product Description
-              </CardTitle>
-            </CardHeader>
-            <CardContent>
-              <ScrollArea className="h-64 pr-4">
-                <div className="whitespace-pre-line text-sm leading-relaxed">
-                  {productDescription}
-                </div>
-              </ScrollArea>
-              <div className="mt-4 flex gap-2">
-                <Badge variant="outline">SEO Optimized</Badge>
-                <Badge variant="outline">Marketplace Ready</Badge>
-              </div>
-            </CardContent>
-          </Card>
+              {/* Product Description */}
+              <Card>
+                <CardHeader>
+                  <CardTitle className="flex items-center gap-2">
+                    <FileText className="w-5 h-5 text-primary" />
+                    Product Description
+                  </CardTitle>
+                </CardHeader>
+                <CardContent>
+                  <ScrollArea className="h-64 pr-4">
+                    <div className="whitespace-pre-line text-sm leading-relaxed">
+                      {product.description}
+                    </div>
+                  </ScrollArea>
+                  <div className="mt-4 flex gap-2">
+                    <Badge variant="outline">SEO Optimized</Badge>
+                    <Badge variant="outline">Marketplace Ready</Badge>
+                  </div>
+                </CardContent>
+              </Card>
 
-          {/* Brand Story */}
-          <Card>
-            <CardHeader>
-              <CardTitle className="flex items-center gap-2">
-                <BookOpen className="w-5 h-5 text-primary" />
-                Brand Storytelling
-              </CardTitle>
-            </CardHeader>
-            <CardContent>
-              <ScrollArea className="h-64 pr-4">
-                <div className="whitespace-pre-line text-sm leading-relaxed">
-                  {brandStory}
-                </div>
-              </ScrollArea>
-              <div className="mt-4 flex gap-2">
-                <Badge variant="outline">Emotional Connection</Badge>
-                <Badge variant="outline">Brand Building</Badge>
-              </div>
-            </CardContent>
-          </Card>
+              {/* Brand Story */}
+              <Card>
+                <CardHeader>
+                  <CardTitle className="flex items-center gap-2">
+                    <BookOpen className="w-5 h-5 text-primary" />
+                    Brand Storytelling
+                  </CardTitle>
+                </CardHeader>
+                <CardContent>
+                  <ScrollArea className="h-64 pr-4">
+                    <div className="whitespace-pre-line text-sm leading-relaxed">
+                      {product.backstory}
+                    </div>
+                  </ScrollArea>
+                  <div className="mt-4 flex gap-2">
+                    <Badge variant="outline">Emotional Connection</Badge>
+                    <Badge variant="outline">Brand Building</Badge>
+                  </div>
+                </CardContent>
+              </Card>
+            </>
+          )}
         </div>
 
         {/* AI Stats */}
@@ -170,7 +165,10 @@ This isn't just a mug - it's a daily reminder to pause, breathe, and appreciate 
         {/* Continue Button */}
         <div className="flex justify-center">
           <Button
-            onClick={onNext}
+            onClick={() => {
+              console.log('[OutputScreen] Continue button clicked!');
+              if (product) onNext(product);
+            }}
             className="px-8 py-3"
           >
             Review & Edit

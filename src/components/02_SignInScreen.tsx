@@ -59,17 +59,45 @@ export function SignInScreen({ onNext, onSignUp }: SignInScreenProps) {
   };
 
   const handleSubmit = async (e: React.FormEvent) => {
-    e.preventDefault();
-    if (validateForm()) {
-      setIsLoading(true);
-      // Simulate API call
-      setTimeout(() => {
-        setIsLoading(false);
-        // In a real app, this would authenticate the user
-        onNext();
-      }, 1500);
+  e.preventDefault();
+  if (validateForm()) {
+    setIsLoading(true);
+    try {
+      const response = await fetch("http://localhost:8000/api/v1/auth/login", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          email: formData.email,
+          password: formData.password,
+        }),
+      });
+
+      if (!response.ok) {
+        throw new Error("Invalid credentials");
+      }
+
+      const data = await response.json();
+      console.log("✅ Logged in:", data);
+
+      // Save full user object in localStorage
+      localStorage.setItem("user", JSON.stringify(data.user));
+
+      // ✅ Also save the email separately for Dashboard
+      if (data.user?.email) {
+        localStorage.setItem("userEmail", data.user.email);
+      }
+
+      onNext(); // go to dashboard
+    } catch (err: any) {
+      alert(err.message || "Login failed");
+    } finally {
+      setIsLoading(false);
     }
-  };
+  }
+};
+
+
+
 
   const handleForgotPassword = () => {
     alert('Password reset functionality would be implemented here. Check your email for reset instructions.');

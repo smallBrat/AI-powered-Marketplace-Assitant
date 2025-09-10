@@ -79,13 +79,49 @@ export function SignUpScreen({ onNext, onSignIn }: SignUpScreenProps) {
     return Object.keys(newErrors).length === 0;
   };
 
-  const handleSubmit = (e: React.FormEvent) => {
-    e.preventDefault();
-    if (validateForm()) {
-      // In a real app, this would create the account
-      onNext();
+  const handleSubmit = async (e: React.FormEvent) => {
+  e.preventDefault();
+  if (validateForm()) {
+    try {
+      const payload = {
+        full_name: formData.fullName,
+        email: formData.email,
+        password: formData.password,
+        confirm_password: formData.confirmPassword,
+        age: parseInt(formData.age),
+        gender: formData.gender,
+        city: formData.city,
+        state: formData.state,
+        country: formData.country,
+        primary_craft: formData.craftCategory,   // backend expects this
+        experience: formData.experience,
+      };
+
+      const response = await fetch("http://localhost:8000/api/v1/auth/signup", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify(payload),
+      });
+
+      if (response.ok) {
+        const data = await response.json();
+        console.log("✅ User created:", data);
+        onNext();
+      } else {
+        const errorData = await response.json();
+        console.error("❌ Signup failed:", errorData);
+        alert(errorData.detail || "Signup failed. Try again.");
+      }
+    } catch (err) {
+      console.error("⚠️ Network error:", err);
+      alert("Network error. Please try again later.");
     }
-  };
+  }
+};
+
+
 
   return (
     <div className="min-h-screen p-6" style={{ backgroundColor: 'var(--color-pastel-lavender)' }}>
